@@ -1,0 +1,43 @@
+services:
+  mongo-primary:
+    image: mongo:${MONGO_VERSION:-5}
+    container_name: mongo-primary
+    ports:
+      - "27017:27017"
+    command: --replSet rs0
+
+  mongo-secondary-1:
+    image: mongo:${MONGO_VERSION:-5}
+    container_name: mongo-secondary-1
+    ports:
+      - "27018:27017"
+    command: --replSet rs0
+    depends_on:
+      - mongo-primary
+
+  mongo-secondary-2:
+    image: mongo:${MONGO_VERSION:-5}
+    container_name: mongo-secondary-2
+    ports:
+      - "27019:27017"
+    command: --replSet rs0
+    depends_on:
+      - mongo-primary
+
+  mongo-replicaset-initiator:
+    build:
+      context: .
+      args:
+        MONGO_VERSION: ${MONGO_VERSION:-5}
+    container_name: mongo-replicaset-initiator
+    environment:
+      REPLICASET_NAME: "rs0"
+      MONGO_PRIMARY: "mongo-primary:27017"
+      MONGO_PRIMARY_USERNAME: ""
+      MONGO_PRIMARY_PASSWORD: ""
+      MONGO_SECONDARY_1: "mongo-secondary-1:27017"
+      MONGO_SECONDARY_2: "mongo-secondary-2:27017"
+    depends_on:
+      - mongo-primary
+      - mongo-secondary-1
+      - mongo-secondary-2
